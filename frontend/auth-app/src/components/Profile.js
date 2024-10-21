@@ -8,7 +8,7 @@ const Profile = () => {
     const [newImage, setNewImage] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [message, setMessage] = useState('');
-    const bucket_name = process.env.REACT_APP_BUCKET_URL
+    const bucket_name = process.env.REACT_APP_BUCKET_URL;
     const baseUrl = process.env.REACT_APP_BASE_API;
 
     useEffect(() => {
@@ -24,7 +24,7 @@ const Profile = () => {
             const timestamp = decoded[1];
 
             setUser({ email, timestamp });
-            setImage(localStorage.getItem('profileImageUrl')); // Get profile image URL from localStorage
+            setImage(localStorage.getItem('profileImageUrl'));
         } catch (err) {
             setError('Error decoding token: ' + err.message);
         }
@@ -33,15 +33,15 @@ const Profile = () => {
     const handleLogout = () => {
         localStorage.removeItem('authToken');
         localStorage.removeItem('profileImageUrl');
-        window.location.href = '/'; // Redirect to login page
+        window.location.href = '/';
     };
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            const previewUrl = URL.createObjectURL(file); // Create a URL for the selected file
+            const previewUrl = URL.createObjectURL(file);
             setNewImage(file);
-            setImage(previewUrl); // Update the image preview
+            setImage(previewUrl);
         }
     };
 
@@ -56,30 +56,25 @@ const Profile = () => {
 
         const token = localStorage.getItem('authToken');
         const email = atob(token).split(':')[0];
-        const oldImageUrl = localStorage.getItem('profileImageUrl'); // Retrieve the old image URL
-        const oldImageKey = oldImageUrl.split('/').pop(); // Extract the key from the URL
+        const oldImageUrl = localStorage.getItem('profileImageUrl');
+        const oldImageKey = oldImageUrl.split('/').pop();
         const uniqueFilename = `${Date.now()}_${newImage.name}`;
         const contentType = newImage.type;
 
         try {
-            // Call the backend to update the profile image
             const response = await axios.put(`${baseUrl}/updateProfileImage`, {
                 email,
                 oldImageKey,
                 newFilename: uniqueFilename,
-                newContentType: contentType
+                newContentType: contentType,
             });
 
             const { uploadURL } = response.data;
-
-            // Upload the new image to S3 using the pre-signed URL
             await axios.put(uploadURL, newImage, {
                 headers: { 'Content-Type': newImage.type },
             });
 
-            // Update local storage and state
             const updatedImageUrl = `https://${bucket_name}.s3.amazonaws.com/${uniqueFilename}`;
-            console.log(updatedImageUrl);
             localStorage.setItem('profileImageUrl', updatedImageUrl);
             setImage(updatedImageUrl);
             setMessage('Image uploaded successfully!');
@@ -92,8 +87,8 @@ const Profile = () => {
     };
 
     return (
-        <div className="profile-container">
-            <h2>User Profile</h2>
+        <div className="container">
+            <h1>User Profile</h1>
             {error && <p className="error">{error}</p>}
             {user && (
                 <div className="user-info">
@@ -105,12 +100,15 @@ const Profile = () => {
                     </div>
                 </div>
             )}
-            <input type="file" onChange={handleImageChange} />
-            <button onClick={uploadImage} disabled={uploading}>
+            <div className="form-group">
+                <input type="file" className="form-control" onChange={handleImageChange} />
+                <label htmlFor="file">Update Profile Picture</label>
+            </div>
+            <button className="btn" onClick={uploadImage} disabled={uploading}>
                 {uploading ? 'Uploading...' : 'Update Profile Image'}
             </button>
-            {message && <p>{message}</p>}
-            <button onClick={handleLogout}>Logout</button>
+            {message && <p className="error">{message}</p>}
+            <button className="btn logout-button" onClick={handleLogout}>Logout</button>
         </div>
     );
 };
